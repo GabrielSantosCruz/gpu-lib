@@ -94,7 +94,7 @@ memory_unmap:
 
   bx lr
 
-key_read:
+key_read: @le o valor dos botoes 
   @salva na pilha
   sub sp, sp, #4 
   str r1, [sp, #0]
@@ -110,7 +110,7 @@ key_read:
 
   bx lr
 
-dp:
+dp: @desenha poligono
   @salvar os registradores na pilha
   sub sp, sp, #28
   str r1, [sp, #24]
@@ -137,16 +137,16 @@ dp:
   @dataB
   mov r0, #1                  @ 0 - quadrado 1 - triangulo
   lsl r0, r0, #31             @desloca 31 bits p esq  
-  mov r1, #0b011100111      @ cor
+  mov r1, #0b011100111      @ cor (3 bits para cada tom RGB)
   lsl r1, r1, #22             @desloca 
   add r0, r0, r1              @junta r0 e r1
   mov r2, #0b0011           @tamanho 
   lsl r2, r2, #18             @ desloca 
   add r0, r0, r2              @junta r0 e r2
-  mov r3, #160                @posicao
+  mov r3, #160                @posicao Y
   lsl r3, r3, #9              @desloca 
-  add r0, r0, r3
-  mov r4, #100                @posicao 
+  add r0, r0, r3              @junta r0 e r3
+  mov r4, #100                @posicao X
   add r0, r0, r4
   add r5, ADRESS_MAPPED, dataB @resultado do endereco
   str r0, [r5]                @carrega o endereco
@@ -165,6 +165,5 @@ dp:
   ldr r6, [sp, #4]
   ldr r0, [sp, #0]
   add sp, sp, #28
-
 
   bx lr
