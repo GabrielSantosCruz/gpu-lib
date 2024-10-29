@@ -1,13 +1,16 @@
   .section .data
 MEM_FD:         .asciz   "/dev/mem"
 FPGA_BRIDGE:    .word    0xff200
-HW_REGS_SPAN:   .word    0x100
+HW_REGS_SPAN:   .word    0x1000
 ADRESS_MAPPED:  .space   4
 ADRESS_FD:      .space   4
 dataA:          .word    0x80
 dataB:          .word    0x70
 WRREG:          .word    0xc0
+mensagem:       .asciz   "erro\n"
 
+  .section .text
+  @definicao das funcoes
   .global memory_map
   .type memory_map, %function
 
@@ -19,6 +22,11 @@ WRREG:          .word    0xc0
   
   .global dp
   .type dp, %function
+  
+  .global hexs
+  .type hexs, %function
+
+  .global print
 
 memory_map:
   @salva os valores dos registradores na pilha
@@ -37,6 +45,9 @@ memory_map:
   mov r1, #2              @modo leitura e escrita
   mov r2, #0              @sem flags
   svc 0                   @chama o sistema para executar
+  
+  cmp r0, #-1 
+  beq print
 
   ldr r1, =ADRESS_FD
   str r0, [r1]
@@ -46,6 +57,8 @@ memory_map:
   mov r7, #192            @syscall do mmap2
   mov r0, #0              @kernel decide o endereço
   ldr r1, =HW_REGS_SPAN   @tamanho da pagina
+  ldr r1, [r1]
+
   mov r2, #3              @modo leitura/escrita
   mov r3, #1              @compartilha com os processos
   ldr r5, =FPGA_BRIDGE    @carrega o endereco base
@@ -74,7 +87,7 @@ memory_unmap:
   str r1, [sp, #4]
   str r7, [sp, #0]
 
-  ldr r0, =mapped_address
+  ldr r0, =ADRESS_MAPPED
   ldr r0, [r0]
   mov r1, #4096           @tamanho da página mapeada
   mov r7, #91             @system call: munmap
@@ -94,7 +107,10 @@ memory_unmap:
 
   bx lr
 
-key_read: @le o valor dos botoes 
+@le o valor dos botoes
+@recebe: nada
+@retorna: o a soma do valor dos botoes pressionados
+key_read: 
   @salva na pilha
   sub sp, sp, #4 
   str r1, [sp, #0]
@@ -110,7 +126,10 @@ key_read: @le o valor dos botoes
 
   bx lr
 
-dp: @desenha poligono
+@desenha poligono
+@recebe: r0-forma, r1-cor, r2-posicao X, posicao Y
+@retorna: nada
+dp: 
   @salvar os registradores na pilha
   sub sp, sp, #28
   str r1, [sp, #24]
@@ -123,21 +142,23 @@ dp: @desenha poligono
 
   @zera o sinal de start
   mov r0, #0
-  add r2, ADRESS_MAPPED, WRREG @soma para pegar o resultado do endereco
-  str r0, [r2]                @se der algum erro maluco, pode ser isso aqui 
+  ldr r1, =ADRESS_MAPPED
+  ldr r1, [r1]
+  str r0, [r1, #0xc0]                @se der algum erro maluco, pode ser isso aqui 
 
   @dataA
   mov r0, #0b0011           @opcode
   mov r1, #0b0000           @endereco
   lsl r1, r1, #4              @deslocar 4bits pra esq
   add r1, r1, r0              @adicionar o opcode no inicio da isntrucao
-  add r2, ADRESS_MAPPED, dataA @soma para pegar o resultado que e o endereco
-  str r1, [r2]                @carrega o endereco
+  ldr r3, =ADRESS_MAPPED
+  ldr r3, [r3]
+  str r1, [r3, #0x80]                @carrega o endereco
 
   @dataB
   mov r0, #1                  @ 0 - quadrado 1 - triangulo
   lsl r0, r0, #31             @desloca 31 bits p esq  
-  mov r1, #0b011100111      @ cor (3 bits para cada tom RGB)
+  mov r1, #0b011101111      @ cor (3 bits para cada tom RGB)
   lsl r1, r1, #22             @desloca 
   add r0, r0, r1              @junta r0 e r1
   mov r2, #0b0011           @tamanho 
@@ -146,15 +167,17 @@ dp: @desenha poligono
   mov r3, #160                @posicao Y
   lsl r3, r3, #9              @desloca 
   add r0, r0, r3              @junta r0 e r3
-  mov r4, #100                @posicao X
+  mov r4, #160                @posicao X
   add r0, r0, r4
-  add r5, ADRESS_MAPPED, dataB @resultado do endereco
-  str r0, [r5]                @carrega o endereco
+  ldr r6, =ADRESS_MAPPED
+  ldr r6, [r6]
+  str r0, [r6, #0x70]                @carrega o endereco
 
   @sinal positivo para WRREG
-  mov r6, #1 
-  add r2, ADRESS_MAPPED, WRREG
-  str r6, [r2]                @carrega no endereco
+  mov r0, #1
+  ldr r1, =ADRESS_MAPPED
+  ldr r1, [r1]
+  str r0, [r1, #0xc0]                @se der algum erro maluco, pode ser isso aqui 
   
   @carrega o valor dos registradores de volta
   ldr r1, [sp, #24]
@@ -165,5 +188,48 @@ dp: @desenha poligono
   ldr r6, [sp, #4]
   ldr r0, [sp, #0]
   add sp, sp, #28
+
+  bx lr
+
+@ascende os mostradores de 7 segmentos
+@recebe: valores
+@retorna: nada
+hexs:
+  @mostradores
+  @HEX5_BASE: .word 0x10  @ Endereço do display HEX5 
+  @HEX4_BASE: .word 0x20  @ Endereço do display HEX4
+  @HEX3_BASE: .word 0x30  @ Endereço do display HEX3
+  @HEX2_BASE: .word 0x40  @ Endereço do display HEX2
+  @HEX1_BASE: .word 0x50  @ Endereço do display HEX1
+  @HEX0_BASE: .word 0x60  @ Endereço do display HEX0
+
+
+  @salvar os resgistradores na memoria
+  
+  ldr r1, =ADRESS_MAPPED
+  ldr r1, [r1]
+
+  @carrega os registradores da memoria 
+
+  bx lr
+
+print:
+  sub sp, sp, #16 
+  str r1, [sp, #12]
+  str r2, [sp, #8]
+  str r7, [sp, #4]
+  str r0, [sp, #0]
+
+  mov r0, #1
+  ldr r1, =mensagem
+  mov r2, #6 
+  mov r7, #4 
+  svc 0 
+
+  add sp, sp, #16 
+  ldr r1, [sp, #12]
+  ldr r2, [sp, #8]
+  ldr r7, [sp, #4]
+  ldr r0, [sp, #0]
 
   bx lr

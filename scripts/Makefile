@@ -9,3 +9,6 @@ main: keys.o functions.o
 
 run: main
 	./main
+
+teste: main
+	gdb main
