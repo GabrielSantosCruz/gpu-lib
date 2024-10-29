@@ -5,16 +5,10 @@ HW_REGS_SPAN:   .word    0x100
 ADRESS_MAPPED:  .space   4
 ADRESS_FD:      .space   4
 
-  .global memory_map
-  .type memory_map, %function
-
-  .global memory_unmap
-  .type memory_unmap, %function
-  
   .global key_read
   .type key_read, %function
 
-memory_map:
+key_read:
   @salva os valores dos registradores na pilha
   sub sp, sp, #28         @reserva 28 bytes na pilha
   str r1, [sp, #24]
@@ -59,9 +53,20 @@ memory_map:
   ldr r0, [sp, #0]
   add sp, sp, #28         @reseta a pilha
   
-  bx lr
+  
+  @salva na pilha
+  sub sp, sp, #4 
+  str r1, [sp, #0]
 
-memory_unmap:
+  @le o valor do botao 
+  ldr r1, =ADRESS_MAPPED
+  ldr r1, [r1]
+  ldr r0, [r1, #0x0]
+
+  @carrega da pilha
+  ldr r1, [sp, #0]
+  add sp, sp, #4 
+
   @salva os registradores na pilha
   sub sp, sp, #12
   str r0, [sp, #8]
@@ -86,20 +91,3 @@ memory_unmap:
 
   add sp, sp, #12
 
-  bx lr
-
-key_read:
-  @salva na pilha
-  sub sp, sp, #4 
-  str r1, [sp, #0]
-
-  @le o valor do botao 
-  ldr r1, =ADRESS_MAPPED
-  ldr r1, [r1]
-  ldr r0, [r1, #0x0]
-
-  @carrega da pilha
-  ldr r1, [sp, #0]
-  add sp, sp, #4 
-
-  bx lr
