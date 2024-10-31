@@ -3,11 +3,11 @@
 extern void memory_map();
 extern void memory_unmap();
 extern int key_read();
-extern void dp();
+//recebe: r0-forma, r1-cor, r2-tamanho, r3-posicao X, r4-posicao Y
+extern void draw_triangle(int cor, int tamanho, int posicoes, int endereco);
 
 void main(){
-  printf("pelo menos aqui foi!\n");  
-    /*while(1){
+/*while(1){
      // Chama a função para mapear a memória
     memory_map();
     
@@ -20,6 +20,14 @@ void main(){
     memory_unmap();
   }*/
   memory_map();
-  dp();
+  unsigned int a = 20;
+  int b = 300; // posX 
+  a = b << 9;
+  a += 20; // posY
+  draw_triangle(0b111000111, 0b0001, a, 0b0000);
+  //a = b << 9;
+  //a += 250; // posY
+  draw_triangle(0b000111000, 0b0001, a, 0b1111);
+  // eu tenho que passar a posição toda em posX
   memory_unmap();
 }

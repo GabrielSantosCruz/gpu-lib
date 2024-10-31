@@ -1,11 +1,11 @@
-functions.o: memory_map.s
-	as -o functions.o memory_map.s
+functions.o: functions_lib.s
+	as -o functions.o functions_lib.s
 
-keys.o: test_keys.c 
-	gcc -c -o keys.o test_keys.c 
+main.o: test_functions.c 
+	gcc -c -o main.o test_functions.c 
 
-main: keys.o functions.o
-	gcc -o main keys.o functions.o
+main: main.o functions.o
+	gcc -o main main.o functions.o
 
 run: main
 	./main

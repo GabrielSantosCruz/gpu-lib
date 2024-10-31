@@ -10,6 +10,7 @@ WRREG:          .word    0xc0
 mensagem:       .asciz   "erro\n"
 
   .section .text
+
   @definicao das funcoes
   .global memory_map
   .type memory_map, %function
@@ -20,14 +21,13 @@ mensagem:       .asciz   "erro\n"
   .global key_read
   .type key_read, %function
   
-  .global dp
-  .type dp, %function
+  .global draw_triangle
+  .type draw_triangle, %function
   
   .global hexs
   .type hexs, %function
 
-  .global print
-
+@mapeia a memoria
 memory_map:
   @salva os valores dos registradores na pilha
   sub sp, sp, #28         @reserva 28 bytes na pilha
@@ -45,9 +45,6 @@ memory_map:
   mov r1, #2              @modo leitura e escrita
   mov r2, #0              @sem flags
   svc 0                   @chama o sistema para executar
-  
-  cmp r0, #-1 
-  beq print
 
   ldr r1, =ADRESS_FD
   str r0, [r1]
@@ -80,6 +77,7 @@ memory_map:
   
   bx lr
 
+@desmapeia a memoria e fecha o arquivo /dev/mem
 memory_unmap:
   @salva os registradores na pilha
   sub sp, sp, #12
@@ -109,7 +107,7 @@ memory_unmap:
 
 @le o valor dos botoes
 @recebe: nada
-@retorna: o a soma do valor dos botoes pressionados
+@retorna: a soma do valor dos botoes pressionados
 key_read: 
   @salva na pilha
   sub sp, sp, #4 
@@ -126,11 +124,12 @@ key_read:
 
   bx lr
 
-@desenha poligono
-@recebe: r0-forma, r1-cor, r2-posicao X, posicao Y
+@desenha triangulo 
+@recebe: r0-forma, r1-cor, r2-tamanho, r3-posicao X, r4-posicao Y
 @retorna: nada
-dp: 
+draw_triangle: 
   @salvar os registradores na pilha
+  @os valores aqui ja sao os argumentos da funcao
   sub sp, sp, #28
   str r1, [sp, #24]
   str r2, [sp, #20]
@@ -144,40 +143,41 @@ dp:
   mov r0, #0
   ldr r1, =ADRESS_MAPPED
   ldr r1, [r1]
-  str r0, [r1, #0xc0]                @se der algum erro maluco, pode ser isso aqui 
+  str r0, [r1, #0xc0]
 
   @dataA
   mov r0, #0b0011           @opcode
-  mov r1, #0b0000           @endereco
+  ldr r1, [sp, #16]           @r3: tem que mudar pra cada bloco
   lsl r1, r1, #4              @deslocar 4bits pra esq
   add r1, r1, r0              @adicionar o opcode no inicio da isntrucao
   ldr r3, =ADRESS_MAPPED
   ldr r3, [r3]
-  str r1, [r3, #0x80]                @carrega o endereco
+  str r1, [r3, #0x80]         @carrega o endereco
 
   @dataB
   mov r0, #1                  @ 0 - quadrado 1 - triangulo
   lsl r0, r0, #31             @desloca 31 bits p esq  
-  mov r1, #0b011101111      @ cor (3 bits para cada tom RGB)
+  ldr r1, [sp, #0]            @r0: cor (3 bits para cada tom RGB)
   lsl r1, r1, #22             @desloca 
   add r0, r0, r1              @junta r0 e r1
-  mov r2, #0b0011           @tamanho 
+  ldr r2, [sp, #24]           @r1: tamanho 
   lsl r2, r2, #18             @ desloca 
   add r0, r0, r2              @junta r0 e r2
-  mov r3, #160                @posicao Y
-  lsl r3, r3, #9              @desloca 
+  @o b.o ta aqui na parte das posicoes
+  ldr r3, [sp, #20]           @r2: posicoes
+  @lsl r3, r3, #9             @desloca 
   add r0, r0, r3              @junta r0 e r3
-  mov r4, #160                @posicao X
-  add r0, r0, r4
+  @ldr r4, [sp, #12]           
+  @add r0, r0, r4
   ldr r6, =ADRESS_MAPPED
   ldr r6, [r6]
-  str r0, [r6, #0x70]                @carrega o endereco
+  str r0, [r6, #0x70]              @carrega o endereco
 
   @sinal positivo para WRREG
   mov r0, #1
   ldr r1, =ADRESS_MAPPED
   ldr r1, [r1]
-  str r0, [r1, #0xc0]                @se der algum erro maluco, pode ser isso aqui 
+  str r0, [r1, #0xc0]              @se der algum erro maluco, pode ser isso aqui 
   
   @carrega o valor dos registradores de volta
   ldr r1, [sp, #24]
@@ -210,26 +210,5 @@ hexs:
   ldr r1, [r1]
 
   @carrega os registradores da memoria 
-
-  bx lr
-
-print:
-  sub sp, sp, #16 
-  str r1, [sp, #12]
-  str r2, [sp, #8]
-  str r7, [sp, #4]
-  str r0, [sp, #0]
-
-  mov r0, #1
-  ldr r1, =mensagem
-  mov r2, #6 
-  mov r7, #4 
-  svc 0 
-
-  add sp, sp, #16 
-  ldr r1, [sp, #12]
-  ldr r2, [sp, #8]
-  ldr r7, [sp, #4]
-  ldr r0, [sp, #0]
 
   bx lr
