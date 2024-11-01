@@ -5,7 +5,7 @@ extern void memory_unmap();
 extern int key_read();
 //recebe: r0-forma, r1-cor, r2-tamanho, r3-posicao X, r4-posicao Y
 extern void draw_triangle(int cor, int tamanho, int posicoes, int endereco);
-
+extern void draw_square(int cor, int tamanho, int posicoes, int endereco);
 void main(){
 /*while(1){
      // Chama a função para mapear a memória
