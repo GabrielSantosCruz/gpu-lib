@@ -33,9 +33,9 @@ void main(){
   }*/
  
   memory_map();
-  unsigned int a = 10;
-  //draw_triangle(0b111000111, 0b0000, a, 0b0000);
-  draw_triangleTeste(0b000111111, 0b0000, a, a, 5); // testar essa função pega todos argumentos
+
+  unsigned int a = 10; // a posicao minima para um triangulo 20x20 é de 10
+  draw_triangle(0b000111111, 0b0000, a, a, 5); // testar essa função pega todos argumentos
 
   memory_unmap();
 

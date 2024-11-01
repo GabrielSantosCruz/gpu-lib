@@ -117,6 +117,8 @@ key_read:
   ldr r1, =ADRESS_MAPPED
   ldr r1, [r1]
   ldr r0, [r1, #0x0]          @le o valor no endereco dos botoes
+  
+  sub r0, r0, #15             @como o valor presente é 15, aqui vai zerar e dizer o botão que está sendo apertado
 
   @carrega da pilha
   ldr r1, [sp, #0]
