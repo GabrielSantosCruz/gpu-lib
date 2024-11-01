@@ -1,14 +1,21 @@
-functions.o: functions_lib.s
-	as -o functions.o functions_lib.s
+C_FILE = test_functions
+S_FILE = functions_lib
+TARGET = main
 
-main.o: test_functions.c 
-	gcc -c -o main.o test_functions.c 
+functions.o: $(S_FILE).s
+	as -o functions.o $(S_FILE).s
 
-main: main.o functions.o
-	gcc -o main main.o functions.o
+$(TARGET).o: $(C_FILE).c 
+	gcc -c -o $(TARGET).o $(C_FILE).c 
 
-run: main
-	./main
+$(TARGET): $(TARGET).o functions.o
+	gcc -o $(TARGET) $(TARGET).o functions.o
 
-teste: main
-	gdb main
+run: $(TARGET)
+	./$(TARGET)
+
+clear: $(C_FILE).o $(S_FILE).o $(TARGET)
+	rm -r $(TARGET).o functions.o $(TARGET)
+
+teste: $(TARGET)
+	gdb $(TARGET)
