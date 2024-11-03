@@ -15,7 +15,7 @@ run: $(TARGET)
 	./$(TARGET)
 
 clear: $(C_FILE).o $(S_FILE).o $(TARGET)
-	rm -r $(TARGET).o functions.o $(TARGET)
+	rm -f $(TARGET).o functions.o $(TARGET) test_functions.o
 
 teste: $(TARGET)
 	gdb $(TARGET)

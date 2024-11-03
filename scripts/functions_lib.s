@@ -2,8 +2,8 @@
 MEM_FD:         .asciz   "/dev/mem"
 FPGA_BRIDGE:    .word    0xff200
 HW_REGS_SPAN:   .word    0x1000
-ADRESS_MAPPED:  .space   4
-ADRESS_FD:      .space   4
+ADDRESS_MAPPED:  .space   4
+ADDRESS_FD:      .space   4
 dataA:          .word    0x80
 dataB:          .word    0x70
 WRREG:          .word    0xc0
@@ -27,6 +27,12 @@ mensagem:       .asciz   "erro\n"
   .global hexs
   .type hexs, %function
 
+  .global clear_dp_memory
+  .type clear_dp_memory, %function
+
+  .global clear_dp_from_vga
+  .type clear_dp_from_vga, %function
+
 @\brief: mapeia a memoria
 memory_map:
   @salva os valores dos registradores na pilha
@@ -46,7 +52,7 @@ memory_map:
   mov r2, #0              @sem flags
   svc 0                   @chama o sistema para executar
 
-  ldr r1, =ADRESS_FD
+  ldr r1, =ADDRESS_FD
   str r0, [r1]
   mov r4, r0              @guarda em r4
 
@@ -62,7 +68,7 @@ memory_map:
   ldr r5, [r5]            @carrega o endereco real (igual um ponteiro)
   svc 0                   @chama o sistema para executar
   
-  ldr r1, =ADRESS_MAPPED  @endereco e carregado aqui
+  ldr r1, =ADDRESS_MAPPED  @endereco e carregado aqui
   str r0, [r1]
   
   @carrega o valor dos registradores de volta
@@ -85,13 +91,13 @@ memory_unmap:
   str r1, [sp, #4]
   str r7, [sp, #0]
 
-  ldr r0, =ADRESS_MAPPED
+  ldr r0, =ADDRESS_MAPPED
   ldr r0, [r0]
   mov r1, #4096           @tamanho da página mapeada
   mov r7, #91             @system call: munmap
   svc 0
   
-  ldr r0, =ADRESS_FD
+  ldr r0, =ADDRESS_FD
   ldr r0, [r0]
   mov r7, #6              @system call: close
   svc 0
@@ -114,7 +120,7 @@ key_read:
   str r1, [sp, #0]
 
   @le o valor do botao 
-  ldr r1, =ADRESS_MAPPED
+  ldr r1, =ADDRESS_MAPPED
   ldr r1, [r1]
   ldr r0, [r1, #0x0]          @le o valor no endereco dos botoes
   
@@ -127,10 +133,11 @@ key_read:
   bx lr
 
 @\brief: desenha triangulo 
-@\param[in]: r0-forma
-@\param[in]: r1-cor
-@\param[in]: r2-tamanho
-@\param[in]: r3-posicao X e Y
+@\param[in]: r0-cor
+@\param[in]: r1-tamanho
+@\param[in]: r2-posicao x
+@\param[in]: r3-posicao y
+@\param[in]: r4-endereco
 @\return: null
 draw_triangle: 
   @analisando aqui agora, nao faz muito sentido, nesse caso, salvar esses valores na pilha
@@ -145,7 +152,7 @@ draw_triangle:
 
   @ Zera o sinal de start
   mov r0, #0
-  ldr r1, =ADRESS_MAPPED
+  ldr r1, =ADDRESS_MAPPED
   ldr r1, [r1]
   str r0, [r1, #0xc0]
 
@@ -153,7 +160,7 @@ draw_triangle:
   mov r0, #0b0011            @ opcode
   lsl r4, r4, #4             @ Desloca endereco 4 bits à esquerda
   add r4, r4, r0             @ Adiciona o opcode a endereco 
-  ldr r3, =ADRESS_MAPPED
+  ldr r3, =ADDRESS_MAPPED
   ldr r3, [r3]
   str r4, [r3, #0x80]        @ Armazena `dataA` no endereço mapeado
 
@@ -175,13 +182,13 @@ draw_triangle:
   ldr r4, [sp, #16]          @ Carrega `posX`
   add r0, r0, r4             @ Junta `posX`
 
-  ldr r6, =ADRESS_MAPPED
+  ldr r6, =ADDRESS_MAPPED
   ldr r6, [r6]
   str r0, [r6, #0x70]        @ Armazena `dataB` no endereço mapeado
 
   @ Sinal positivo para WRREG
   mov r0, #1
-  ldr r1, =ADRESS_MAPPED
+  ldr r1, =ADDRESS_MAPPED
   ldr r1, [r1]
   str r0, [r1, #0xc0]        @ Atualiza WRREG para sinal positivo
   
@@ -196,10 +203,11 @@ draw_triangle:
   bx lr
 
 @\brief: desenha quadrado 
-@\param[in]: r0-forma
-@\param[in]: r1-cor
-@\param[in]: r2-tamanho
-@\param[in]: r3-posicao X e Y
+@\param[in]: r0-cor
+@\param[in]: r1-tamanho
+@\param[in]: r2-posicao x
+@\param[in]: r3-posicao y
+@\param[in]: r4-endereco
 @\return: null
 draw_square: 
   @analisando aqui agora, nao faz muito sentido, nesse caso, salvar esses valores na pilha
@@ -214,7 +222,7 @@ draw_square:
 
   @ Zera o sinal de start
   mov r0, #0
-  ldr r1, =ADRESS_MAPPED
+  ldr r1, =ADDRESS_MAPPED
   ldr r1, [r1]
   str r0, [r1, #0xc0]
 
@@ -222,7 +230,7 @@ draw_square:
   mov r0, #0b0011            @ opcode
   lsl r4, r4, #4             @ Desloca endereco 4 bits à esquerda
   add r4, r4, r0             @ Adiciona o opcode a endereco 
-  ldr r3, =ADRESS_MAPPED
+  ldr r3, =ADDRESS_MAPPED
   ldr r3, [r3]
   str r4, [r3, #0x80]        @ Armazena `dataA` no endereço mapeado
 
@@ -244,13 +252,13 @@ draw_square:
   ldr r4, [sp, #16]          @ Carrega `posX`
   add r0, r0, r4             @ Junta `posX`
 
-  ldr r6, =ADRESS_MAPPED
+  ldr r6, =ADDRESS_MAPPED
   ldr r6, [r6]
   str r0, [r6, #0x70]        @ Armazena `dataB` no endereço mapeado
 
   @ Sinal positivo para WRREG
   mov r0, #1
-  ldr r1, =ADRESS_MAPPED
+  ldr r1, =ADDRESS_MAPPED
   ldr r1, [r1]
   str r0, [r1, #0xc0]        @ Atualiza WRREG para sinal positivo
   
@@ -278,11 +286,81 @@ hexs:
 
   @salvar os resgistradores na memoria
 
-  ldr r1, =ADRESS_MAPPED
+  ldr r1, =ADDRESS_MAPPED
   ldr r1, [r1]
 
   mov r3, #0x09 @ valor do led
   strb r3, [r1, #0x10] @tecnicamente é pra escrever no digito 5   
+
   @carrega os registradores da memoria 
 
   bx lr
+
+@\brief: recebe uma posicao e apaga o poligono da instrucao dp 
+@\param[in]: r0-endereco 
+@\return: null
+clear_dp_memory:
+  @ Salva os registradores na pilha
+  sub sp, sp, #4 
+  str r0, [sp, #0]           @guarda r0 no topo da pilha
+  @ essas infomacoes do que e cada registrador nao servem aqui!!! 
+
+  @ Zera o sinal de start
+  mov r2, #0
+  ldr r1, =ADDRESS_MAPPED
+  ldr r1, [r1]
+  str r2, [r1, #0xc0]
+
+  @ Configuração de dataA
+  mov r1, #0b0011            @ opcode
+  lsl r0, r0, #4             @ Desloca endereco 4 bits à esquerda
+  add r0, r0, r1             @ Adiciona o opcode a endereco 
+  ldr r3, =ADDRESS_MAPPED
+  ldr r3, [r3]
+  str r0, [r3, #0x80]        @ Armazena `dataA` no endereço mapeado
+
+  @ Configuração de dataB
+  mov r0, #1                 @ Tipo: 0 - quadrado, 1 - triângulo
+  lsl r0, r0, #31            @ Desloca `tipo` para o bit 31
+  mov r1, #0b000000000     @ carrega uma "cor" 
+  lsl r1, r1, #22            @ Desloca `cor`
+  add r0, r0, r1             @ Junta `tipo` e `cor`
+
+  mov r2, #0b0000          @ Carrega `tamanho` como 0, para limpar o vga
+  lsl r2, r2, #18            @ Desloca `tamanho`
+  add r0, r0, r2             @ Junta `tamanho`
+
+  mov r3, #0b000000000     @ Carrega `posY`
+  lsl r3, r3, #9             @ Desloca `posY`
+  add r0, r0, r3             @ Junta `posY`
+
+  mov r4, #0b000000000     @ Carrega `posX`
+  add r0, r0, r4             @ Junta `posX`
+
+  ldr r6, =ADDRESS_MAPPED
+  ldr r6, [r6]
+  str r0, [r6, #0x70]        @ Armazena `dataB` no endereço mapeado
+
+  @ Sinal positivo para WRREG
+  mov r0, #1
+  ldr r1, =ADDRESS_MAPPED
+  ldr r1, [r1]
+  str r0, [r1, #0xc0]        @ Atualiza WRREG para sinal positivo
+  
+  @ Restaura os valores dos registradores
+
+  bx lr
+
+clear_dp_from_vga:
+  @tem que mandar a posicao para a funcao clear_dp
+  @o loop so para quando limpar as 32 posicoes
+  mov r0, #31
+  for:
+    cmp r0, #-1  
+    beq exit 
+    clear_dp_memory
+    sub r0, r0, #1
+    bl for
+
+  exit:
+    bx lr
