@@ -1,5 +1,7 @@
 - testar o valor mínimo da posição de Y (ou só ler o krlho do TCC)
 - tentar organizar a biblioteca e criar arquivos de cabecalho
 - testar se a nova funcao dos botoes esta funcionando
+  - aparentemente não
 - testar funcao de limpar tela
+  - tá entrando em loop infinito, aparentemente, e não tá limpando a tela kkkkk
 - testar se passando as cores igual no pbl1 vai

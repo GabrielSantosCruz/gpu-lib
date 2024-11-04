@@ -1,3 +1,4 @@
 ./scripts/keys.o
 ./scripts/functions.o
 ./scripts/main
+./scripts/todo.txt

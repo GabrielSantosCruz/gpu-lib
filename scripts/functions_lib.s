@@ -348,19 +348,20 @@ clear_dp_memory:
   str r0, [r1, #0xc0]        @ Atualiza WRREG para sinal positivo
   
   @ Restaura os valores dos registradores
+  ldr r0, [sp, #0]
+  add sp, sp, #4
 
   bx lr
 
+@\brief: limpa todos enderecos da memoria de instrucao
 clear_dp_from_vga:
-  @tem que mandar a posicao para a funcao clear_dp
-  @o loop so para quando limpar as 32 posicoes
-  mov r0, #31
+  mov r0, #31                @ adiciona 31 a r0, que e a quantidade de enderecos
   for:
-    cmp r0, #-1  
-    beq exit 
-    clear_dp_memory
-    sub r0, r0, #1
-    bl for
+    cmp r0, #-1              @ compara com -1, para ver se todos enderecos ja foram limpos 
+    beq exit                 @ sai do loop caso a comparacao seja verdadeira 
+    bl clear_dp_memory       @ chama a funcao para limpar o endereco
+    sub r0, r0, #1           @ subtrai 1 do valor de r0
+    bl for                   @ volta para o inicio do loop
 
   exit:
     bx lr

@@ -11,18 +11,23 @@ extern void memory_unmap();
 extern int key_read();
 extern void draw_triangle(int cor, int tamanho, int posicoes, int endereco);
 extern void draw_square(int cor, int tamanho, int posicoes, int endereco);
+extern void clear_dp_from_vga();
 
 void main(){
   memory_map();
 
   draw_triangle(video_PURPLE, 0b0001, 10, 10, 0);
-
+  
+  int key_value = 0;
+  
   while(key_value != 8){
 
-    int key_value = key_read();
+    key_value = key_read();
 
     if(key_value == 1){
       draw_triangle(0b000111111, 0b0001, 30, 20, 1);
+    } else if (key_value == 2){
+      clear_dp_from_vga();
     }
 
   }
