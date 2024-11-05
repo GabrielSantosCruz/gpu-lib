@@ -33,6 +33,9 @@ mensagem:       .asciz   "erro\n"
   .global clear_dp_from_vga
   .type clear_dp_from_vga, %function
 
+  .global wbm
+  .global wbm, %function
+
 @\brief: mapeia a memoria
 memory_map:
   @salva os valores dos registradores na pilha
@@ -213,12 +216,12 @@ draw_square:
   @analisando aqui agora, nao faz muito sentido, nesse caso, salvar esses valores na pilha
   @ Salva os registradores na pilha
   ldr r4, [sp, #0]           @ Carrega `endereco` da pilha (quinto argumento)
-  sub sp, sp, #28
-  str r0, [sp, #24]          @ Salva `cor`
-  str r1, [sp, #20]          @ Salva `tamanho`
-  str r2, [sp, #16]          @ Salva `posX`
-  str r3, [sp, #12]          @ Salva `posY`
-  str r4, [sp, #8]           @ Salva `endereco`
+  sub sp, sp, #20
+  str r0, [sp, #16]          @ Salva `cor`
+  str r1, [sp, #12]          @ Salva `tamanho`
+  str r2, [sp, #8]          @ Salva `posX`
+  str r3, [sp, #4]          @ Salva `posY`
+  str r4, [sp, #0]           @ Salva `endereco`
 
   @ Zera o sinal de start
   mov r0, #0
@@ -272,10 +275,66 @@ draw_square:
 
   bx lr
 
+@\brief: desenha quadrado 
+@\param[in]: r0-cor
+@\param[in]: r1-endereco
+@\return: null
+wbm:
+  @ Salva os registradores na pilha
+  sub sp, sp, #8
+  str r0, [sp, #0]          @ Salva `cor`
+  str r1, [sp, #4]          @ Salva `endereco`
+
+  @ Zera o sinal de start
+  mov r0, #0
+  ldr r1, =ADDRESS_MAPPED
+  ldr r1, [r1]
+  str r0, [r1, #0xc0]
+
+  @ Configuração de dataA
+  mov r0, #0b0010          @ opcode
+  ldr r1, [sp, #4]           @ carrega o endereco em r1
+  lsl r1, r1, #4             @ Desloca endereco 4 bits à esquerda
+  add r1, r1, r0             @ Adiciona o opcode a endereco 
+  ldr r2, =ADDRESS_MAPPED
+  ldr r2, [r2]
+  str r1, [r2, #0x80]        @ Armazena `dataA` no endereço mapeado
+
+  @ Configuração de dataB
+  ldr r0, [sp, #0]
+
+  ldr r1, =ADDRESS_MAPPED
+  ldr r1, [r1]
+  str r0, [r1, #0x70]        @ Armazena `dataB` no endereço mapeado
+
+  @ Sinal positivo para WRREG
+  mov r0, #1
+  ldr r1, =ADDRESS_MAPPED
+  ldr r1, [r1]
+  str r0, [r1, #0xc0]        @ Atualiza WRREG para sinal positivo
+  
+  @ Restaura os valores dos registradores
+  ldr r0, [sp, #0]          @ Restaura `cor`
+  ldr r1, [sp, #4]          @ Restaura `tamanho`
+  add sp, sp, #8            @ Libera o espaço da pilha
+
+  bx lr
+
 @\brief: ascende os mostradores de 7 segmentos
 @recebe: valores
 @retorna: nada
 hexs:
+  @ salva o valor dos registradores na pilha 
+  ldr r4, [sp, #0]
+  ldr r5, [sp, #4]
+  sub sp, sp, #24
+  str r0, [sp, #20]
+  str r1, [sp, #16]
+  str r2, [sp, #12]
+  str r3, [sp, #8]
+  str r4, [sp, #4]
+  str r5, [sp, #0]
+
   @mostradores
   @HEX5_BASE: .word 0x10  @ Endereço do display HEX5 
   @HEX4_BASE: .word 0x20  @ Endereço do display HEX4
@@ -286,13 +345,23 @@ hexs:
 
   @salvar os resgistradores na memoria
 
-  ldr r1, =ADDRESS_MAPPED
-  ldr r1, [r1]
-
-  mov r3, #0x09 @ valor do led
-  strb r3, [r1, #0x10] @tecnicamente é pra escrever no digito 5   
-
+  ldr r6, =ADDRESS_MAPPED
+  ldr r6, [r6]
+ 
+  strb r0, [r6, #0x10] @escrever no digito 5   
+  strb r1, [r6, #0x20] @escrever no digito 4   
+  strb r2, [r6, #0x30] @escrever no digito 3   
+  strb r3, [r6, #0x40] @escrever no digito 2   
+  strb r4, [r6, #0x50] @escrever no digito 1   
+  strb r5, [r6, #0x60] @escrever no digito 0   
   @carrega os registradores da memoria 
+  ldr r0, [sp, #20]
+  ldr r1, [sp, #16]
+  ldr r2, [sp, #12]
+  ldr r3, [sp, #8]
+  ldr r4, [sp, #4]
+  ldr r5, [sp, #5]
+  add sp, sp, #24
 
   bx lr
 
@@ -303,7 +372,6 @@ clear_dp_memory:
   @ Salva os registradores na pilha
   sub sp, sp, #4 
   str r0, [sp, #0]           @guarda r0 no topo da pilha
-  @ essas infomacoes do que e cada registrador nao servem aqui!!! 
 
   @ Zera o sinal de start
   mov r2, #0
@@ -357,9 +425,9 @@ clear_dp_memory:
 clear_dp_from_vga:
   mov r0, #31                @ adiciona 31 a r0, que e a quantidade de enderecos
   for:
-    cmp r0, #-1              @ compara com -1, para ver se todos enderecos ja foram limpos 
-    beq exit                 @ sai do loop caso a comparacao seja verdadeira 
     bl clear_dp_memory       @ chama a funcao para limpar o endereco
+    cmp r0, #0              @ compara com -1, para ver se todos enderecos ja foram limpos 
+    beq exit                 @ sai do loop caso a comparacao seja verdadeira 
     sub r0, r0, #1           @ subtrai 1 do valor de r0
     bl for                   @ volta para o inicio do loop
 
