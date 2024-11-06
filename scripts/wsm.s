@@ -106,7 +106,7 @@ memory_unmap:
 @\param[in]: r2 - componente B
 @\param[in]: r3 - endereço de memória do sprite
 @\return: null
-write_sprite_memory:
+wsm:
   @ Salva os registradores na pilha
   sub sp, sp, #16
   str r0, [sp, #12]          @ r

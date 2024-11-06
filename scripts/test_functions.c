@@ -14,15 +14,17 @@ extern void draw_triangle(int cor, int tamanho, int posX, int posY, int endereco
 extern void draw_square(int cor, int tamanho, int posX, int posY, int endereco);
 extern void clear_dp_from_vga();
 extern void wbm(int cor, int endereco);
+extern void wsm(int r, int g, int b, int endereco); 
+extern void seteseg(void); 
 
 void main(){
   memory_map();
 
   draw_triangle(video_PURPLE, 0b0001, 10, 10, 0);
-  
+
   int key_value = 0;
   
-  while(key_value != 8){
+  while(key_value != 8){ 
 
     key_value = key_read();
     printf("Valor do botão: %d\n", key_value);
@@ -30,7 +32,7 @@ void main(){
     if(key_value == 1){
       draw_triangle(0b000111111, 0b0001, 30, 20, 1);
     } else if (key_value == 2){
-      draw_square(0b000111111, 0b0001, 100, 200, )
+      draw_square(0b000111111, 0b0001, 100, 200, 1); 
     } else if (key_value == 4) {
       clear_dp_from_vga();
     }

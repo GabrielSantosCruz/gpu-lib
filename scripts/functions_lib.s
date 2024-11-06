@@ -34,7 +34,13 @@ mensagem:       .asciz   "erro\n"
   .type clear_dp_from_vga, %function
 
   .global wbm
-  .global wbm, %function
+  .type wbm, %function
+
+  .global wsm
+  .type wsm, %function
+
+  .global seteseg
+  .type seteseg, %function
 
 @\brief: mapeia a memoria
 memory_map:
@@ -433,3 +439,83 @@ clear_dp_from_vga:
 
   exit:
     bx lr
+
+@\brief: escreve valores RGB na memória de sprites
+@\param[in]: r0 - componente R
+@\param[in]: r1 - componente G
+@\param[in]: r2 - componente B
+@\param[in]: r3 - endereço de memória do sprite
+@\return: null
+wsm:
+  @ Salva os registradores na pilha
+  sub sp, sp, #16
+  str r0, [sp, #12]          @ r
+  str r1, [sp, #8]           @ g 
+  str r2, [sp, #4]           @ b
+  str r3, [sp, #0]           @ endereco 
+
+  @ Zera o sinal de start
+  mov r0, #0
+  ldr r1, =ADDRESS_MAPPED
+  ldr r1, [r1]
+  str r0, [r1, #0xc0]        @ Define WRREG como 0 para reiniciar o sinal
+
+  @ Configuração de dataA (opcode e endereço de memória)
+  mov r0, #0b0001            @ Define o opcode WSM (0001)
+  lsl r3, r3, #9             @ Desloca endereço de memória para alinhar
+  add r3, r3, r0             @ Combina o opcode com o endereço
+  ldr r2, =ADDRESS_MAPPED
+  ldr r2, [r2]
+  str r3, [r2, #0x80]        @ Armazena `dataA` no endereço mapeado para dataA
+
+  @ Configuração de dataB (valores RGB)
+  ldr r0, [sp, #12]          @ carrega r 
+  lsl r0, r0, #6             @ r para a posicao correta
+  ldr r1, [sp, #8]           @ carrega g
+  lsl r1, r1, #3             @ desloca g
+  add r0, r0, r1             @ combina r e g
+  ldr r1, [sp, #4]           @ carrega b
+  add r0, r0, r1             @ combina r g e b 
+
+  ldr r4, =ADDRESS_MAPPED
+  ldr r4, [r4]
+  str r0, [r4, #0x70] 
+
+  @ Sinal positivo para WRREG
+  mov r0, #1
+  ldr r1, =ADDRESS_MAPPED
+  ldr r1, [r1]
+  str r0, [r1, #0xc0]        @ Atualiza WRREG para iniciar a escrita
+
+  @ Restaura os valores dos registradores
+  ldr r0, [sp, #12]          @ restaura r
+  ldr r1, [sp, #8]           @ restaura g
+  ldr r2, [sp, #4]           @ restaura b
+  ldr r3, [sp, #0]           @ restaura endereco 
+  add sp, sp, #16            @ libera pilha 
+
+  bx lr                      @ Retorna da função
+
+
+seteseg: 
+  ldr r0, =0b0110000        @ digito 1
+  ldr r1, =ADDRESS_MAPPED  
+  ldr r1, [r1]              
+  str r0, [r1, #0x10]       @ HEX5_BASE (0x10)
+
+  ldr r0, =0b1111001        @ digito 2
+  str r0, [r1, #0x20]       @ HEX4_BASE (0x20)
+
+  ldr r0, =0b0100100        @ digito 3
+  str r0, [r1, #0x30]       @ HEX3_BASE (0x30)
+
+  ldr r0, =0b0110000        @ digito 4
+  str r0, [r1, #0x40]       @ HEX2_BASE (0x40)
+
+  ldr r0, =0b0011001        @ digito 5
+  str r0, [r1, #0x50]       @ HEX1_BASE (0x50)
+
+  ldr r0, =0b0010010        @ digito 6
+  str r0, [r1, #0x60]       @ HEX0_BASE (0x60)
+
+  bx lr                     
