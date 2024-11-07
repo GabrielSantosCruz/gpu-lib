@@ -41,7 +41,7 @@ void set_background_block_caller(unsigned int column, unsigned int line, unsigne
 
 void clear_screen() {
     // Define a cor de fundo para um valor (por exemplo, preto)
-    set_background_color_caller(0, 0, 0);
+    set_background_color(0, 0, 0);
 
     // Apaga todos os blocos de background
     for (int col = 0; col < 80; col++) {
@@ -52,7 +52,7 @@ void clear_screen() {
 
     // Desabilita todos os sprites
     for (int i = 1; i < 32; i++) {
-        set_sprite_caller(i, 0, 0, 0, 0);  // Desativa o sprite no registrador correspondente
+        set_sprite(i, 0, 0, 0, 0);  // Desativa o sprite no registrador correspondente
     }
 }
 

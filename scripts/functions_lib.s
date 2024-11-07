@@ -457,7 +457,7 @@ set_sprite:                           @ Início da função set_sprite
 
     LDR r5, [r6, #0xb0]
     CMP r5, #1              @Testa o bit 0 de r0 (bit de status do buffer)
-    BEQ wait_loop   
+    BL wait_loop   
   
     LSL r0, r0, #4                    @ Desloca r0 (primeiro argumento)
     STR r0, [r6, #0x80]              @ Armazena r0 deslocado no dataA
@@ -493,7 +493,7 @@ set_background_color:                @ Início da função set_background_color
 
     LDR r5, [r6, #0xb0]
     CMP r5, #1              @Testa o bit 0 de r0 (bit de status do buffer)
-    BEQ wait_loop   
+    BL wait_loop   
     
     MOV r3, #0                       @ Define r3 como o valor fixo do registrador para esta operação
     LSL r3, r3, #4                   @ Desloca o valor do registrador (r3) 4 bits à esquerda
@@ -524,7 +524,7 @@ set_background_block:
 
   LDR r5, [r6, #0xb0]
   CMP r5, #1              @Testa o bit 0 de r0 (bit de status do buffer)
-  BEQ wait_loop   
+  BL wait_loop   
 
   LSL r0, r0, #4
   MOV r5, #2
@@ -552,7 +552,7 @@ wait_loop:
   LDR r6, [r6]
   LDR r5, [r6, #0xb0]
   CMP r5, #1              @Testa o bit 0 de r0 (bit de status do buffer)
-  BEQ wait_loop   
+  BL wait_loop   
   BX lr
 
 WSM:
@@ -564,7 +564,7 @@ WSM:
 
   LDR r5, [r6, #0xb0]
   CMP r5, #1              @Testa o bit 0 de r0 (bit de status do buffer)
-  BEQ wait_loop   
+  BL wait_loop   
 
   LSL r0, r0, #4
   MOV r5, #1
