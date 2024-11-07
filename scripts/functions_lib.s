@@ -36,6 +36,16 @@ mensagem:       .asciz   "erro\n"
   .global wbm
   .global wbm, %function
 
+  .global set_sprite
+  .type set_sprite, %function   
+
+  .global set_background_color
+  .type set_background_color, %function 
+
+  .global set_background_block
+  .type set_background_block, %function
+
+
 @\brief: mapeia a memoria
 memory_map:
   @salva os valores dos registradores na pilha
@@ -433,3 +443,111 @@ clear_dp_from_vga:
 
   exit:
     bx lr
+
+
+set_sprite:                           @ Início da função set_sprite
+
+    PUSH {lr}                         @ Salva o link register (retorno da função) na pilha
+
+    LDR r6, =ADDRESS_MAPPED
+    LDR r6, [r6]
+
+    LDR r5, [r6, #0xb0]
+    CMP r5, #1              @Testa o bit 0 de r0 (bit de status do buffer)
+    BEQ wait_loop   
+  
+    LSL r0, r0, #4                    @ Desloca r0 (primeiro argumento)
+    STR r0, [r6, #0x80]              @ Armazena r0 deslocado no dataA
+
+    LSL r1, r1, #29                   @ Desloca r1 (segundo argumento)
+    LSL r2, r2, #19                   @ Desloca r2 (terceiro argumento)
+    LSL r3, r3, #9                    @ Desloca r3 (quarto argumento)
+
+    ORR r1, r1, r2                    @ Combina r1 e r2
+    ORR r1, r1, r3                    @ Combina r1 e r3
+
+    LDR r4, [sp, #4]                  @ Carrega o quinto argumento da stack para r4
+
+    ORR r1, r1, r4                    @ Combina r1 com r4 (quinto argumento)
+	
+    STR r1, [r6, #0x70]              @ Armazena o valor combinado no dataB
+
+    MOV r0, #1                        @ Habilita instrução WRREG
+    STR r0, [r6, #0xc0]
+    MOV r0, #0                        @ Desabilita instrução WRREG
+    STR r0, [r6, #0xc0]
+
+    ADD sp, sp, #8                   @ Ajusta a stack
+    BX lr                            
+
+
+set_background_color:                @ Início da função set_background_color
+
+    PUSH {lr}                        @ Salva o link register (retorno da função) na pilha
+
+    LDR r6, =ADDRESS_MAPPED
+    LDR r6, [r6]
+
+    LDR r5, [r6, #0xb0]
+    CMP r5, #1              @Testa o bit 0 de r0 (bit de status do buffer)
+    BEQ wait_loop   
+    
+    MOV r3, #0                       @ Define r3 como o valor fixo do registrador para esta operação
+    LSL r3, r3, #4                   @ Desloca o valor do registrador (r3) 4 bits à esquerda
+    STR r3, [r6, #0x80]              @ Armazena o valor do registrador no dataA
+
+    LSL r0, r0, #6                   @ Desloca o valor do componente R 6 bits à esquerda
+    LSL r1, r1, #3                   @ Desloca o valor do componente G 3 bits à esquerda
+
+    ORR r0, r0, r1                   @ Combina R e G em um único valor
+    ORR r0, r0, r2                   @ Adiciona B ao valor combinado de R e G
+	
+    STR r0, [r6, #0x70]             @ Armazena o valor final RGB no dataB
+
+    MOV r0, #1                       @ Sinaliza para habilitar a instrução
+    STR r0, [r6, #0xc0]             @ Grava o sinal de habilitação no WRREG
+    MOV r0, #0                       @ Sinaliza para desabilitar a instrução
+    STR r0, [r6, #0xc0]             @ Grava o sinal de desabilitação no WRREG
+
+    ADD sp, sp, #4                   @ Ajusta a stack
+    BX lr
+
+set_background_block:
+  
+  PUSH {lr}
+
+  LDR r6, =ADDRESS_MAPPED
+  LDR r6, [r6]
+
+  LDR r5, [r6, #0xb0]
+  CMP r5, #1              @Testa o bit 0 de r0 (bit de status do buffer)
+  BEQ wait_loop   
+
+  LSL r0, r0, #4
+  MOV r5, #2
+  ORR r0, r0, r5
+  STR r0, [r6, #0x80]              @ Armazena o valor do registrador no dataA
+
+  LSL r2, r2, #3
+  LSL r3, r3, #6
+  ORR r1, r1, r2
+  ORR r1, r1, r3
+  STR r1, [r6, #0x70]             @ Armazena o valor final RGB no dataB
+
+
+  MOV r0, #1                       @ Sinaliza para habilitar a instrução
+  STR r0, [r6, #0xc0]             @ Grava o sinal de habilitação no WRREG
+  MOV r0, #0                       @ Sinaliza para desabilitar a instrução
+  STR r0, [r6, #0xc0]             @ Grava o sinal de desabilitação no WRREG
+
+  ADD sp, sp, #4                   @ Ajusta a stack
+  BX lr                            
+
+
+wait_loop:
+  LDR r6, =ADDRESS_MAPPED
+  LDR r6, [r6]
+  LDR r5, [r6, #0xb0]
+  CMP r5, #1              @Testa o bit 0 de r0 (bit de status do buffer)
+  BEQ wait_loop   
+  BX lr

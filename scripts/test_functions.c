@@ -12,8 +12,35 @@ extern int key_read();
 extern void hexs(int digito0, int digito1, int digito2, int digito3, int digito4, int digito5);
 extern void draw_triangle(int cor, int tamanho, int posX, int posY, int endereco);
 extern void draw_square(int cor, int tamanho, int posX, int posY, int endereco);
-extern void clear_dp_from_vga();
-extern void wbm(int cor, int endereco);
+//extern void clear_dp_from_vga();
+//extern void wbm(int cor, int endereco);
+
+extern void set_background_color(unsigned int red, unsigned int green, unsigned int blue);
+extern void set_sprite(unsigned int reg, unsigned int activation_bit, unsigned int x, unsigned int y, unsigned int offset);
+extern void set_background_block(unsigned int address, unsigned int red, unsigned int green, unsigned int blue);
+
+
+void set_background_block_caller(unsigned int column, unsigned int line, unsigned int red, unsigned int green, unsigned int blue) {
+    unsigned int address = (line * 80) + column;  // Cálculo do endereço do bloco
+    set_background_block(address, red, green, blue);  // Chama a função Assembly para configurar bloco de background
+} //USA ESSA
+
+void clear_screen() {
+    // Define a cor de fundo para um valor (por exemplo, preto)
+    set_background_color_caller(0, 0, 0);
+
+    // Apaga todos os blocos de background
+    for (int col = 0; col < 80; col++) {
+        for (int lin = 0; lin < 60; lin++) { //mudar isso
+            set_background_block_caller(col, lin, 110, 111, 111);  // Define todos os blocos para preto (verificar a ordem)
+        }
+    }
+
+    // Desabilita todos os sprites
+    for (int i = 1; i < 32; i++) {
+        set_sprite_caller(i, 0, 0, 0, 0);  // Desativa o sprite no registrador correspondente
+    }
+}
 
 void main(){
   memory_map();
@@ -30,7 +57,7 @@ void main(){
     if(key_value == 1){
       draw_triangle(0b000111111, 0b0001, 30, 20, 1);
     } else if (key_value == 2){
-      draw_square(0b000111111, 0b0001, 100, 200, )
+      draw_square(0b000111111, 0b0001, 100, 200, 0);
     } else if (key_value == 4) {
       clear_dp_from_vga();
     }
