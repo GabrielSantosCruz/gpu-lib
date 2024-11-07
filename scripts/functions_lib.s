@@ -45,6 +45,9 @@ mensagem:       .asciz   "erro\n"
   .global set_background_block
   .type set_background_block, %function
 
+  .global WSM
+  .type WSM, %function
+
 
 @\brief: mapeia a memoria
 memory_map:
@@ -551,3 +554,35 @@ wait_loop:
   CMP r5, #1              @Testa o bit 0 de r0 (bit de status do buffer)
   BEQ wait_loop   
   BX lr
+
+WSM:
+
+  PUSH {lr}
+
+  LDR r6, =ADDRESS_MAPPED
+  LDR r6, [r6]
+
+  LDR r5, [r6, #0xb0]
+  CMP r5, #1              @Testa o bit 0 de r0 (bit de status do buffer)
+  BEQ wait_loop   
+
+  LSL r0, r0, #4
+  MOV r5, #1
+  ORR r0, r0, r5
+  STR r0, [r6, #0x80]              @ Armazena o valor do registrador no dataA
+
+  LSL r2, r2, #3
+  LSL r3, r3, #6
+  ORR r1, r1, r2
+  ORR r1, r1, r3
+  STR r1, [r6, #0x70]             @ Armazena o valor final RGB no dataB
+
+
+  MOV r0, #1                       @ Sinaliza para habilitar a instrução
+  STR r0, [r6, #0xc0]             @ Grava o sinal de habilitação no WRREG
+  MOV r0, #0                       @ Sinaliza para desabilitar a instrução
+  STR r0, [r6, #0xc0]             @ Grava o sinal de desabilitação no WRREG
+
+  ADD sp, sp, #4                   @ Ajusta a stack
+  BX lr            
+

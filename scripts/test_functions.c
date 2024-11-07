@@ -18,7 +18,21 @@ extern void draw_square(int cor, int tamanho, int posX, int posY, int endereco);
 extern void set_background_color(unsigned int red, unsigned int green, unsigned int blue);
 extern void set_sprite(unsigned int reg, unsigned int activation_bit, unsigned int x, unsigned int y, unsigned int offset);
 extern void set_background_block(unsigned int address, unsigned int red, unsigned int green, unsigned int blue);
+extern void WSM(unsigned int address, unsigned int red, unsigned int green, unsigned int blue);
 
+
+void mudar_sprite() {
+    unsigned int endereco_base = 0; // Endereço base inicial
+    unsigned int red = 0;                  
+    unsigned int green = 255;                  
+    unsigned int blue = 0;                  
+
+    // Loop para as primeiras 400 posições de memória
+    for (unsigned int i = 0; i < 400; i++) {
+        unsigned int address = endereco_base + i; // Calcula o endereço para cada posição
+        WSM(address, red, green, blue);           // Chama a função WSM para o endereço e valores RGB
+    }
+}
 
 void set_background_block_caller(unsigned int column, unsigned int line, unsigned int red, unsigned int green, unsigned int blue) {
     unsigned int address = (line * 80) + column;  // Cálculo do endereço do bloco
