@@ -33,10 +33,7 @@ mensagem:       .asciz   "erro\n"
   .global wbm
   .type wbm, %function
 
-  .global clear_background
-  .type clear_background, %function
-
-  .global set_sprite 
+  .global set_sprite
   .type set_sprite, %function   
 
   .global set_background_color
@@ -44,6 +41,10 @@ mensagem:       .asciz   "erro\n"
 
   .global set_background_block
   .type set_background_block, %function
+
+  .global WSM
+  .type WSM, %function
+
 
 @\brief: mapeia a memoria
 memory_map:
@@ -123,113 +124,6 @@ memory_unmap:
 
   bx lr
 
-set_sprite:                           @ Início da função set_sprite
-
-    PUSH {lr}                         @ Salva o link register (retorno da função) na pilha
-
-    LDR r6, =ADDRESS_MAPPED
-    LDR r6, [r6]
-
-    LDR r5, [r6, #0xb0]
-    CMP r5, #1              @Testa o bit 0 de r0 (bit de status do buffer)
-    BEQ wait_loop   
-  
-    LSL r0, r0, #4                    @ Desloca r0 (primeiro argumento)
-    STR r0, [r6, #0x80]              @ Armazena r0 deslocado no dataA
-
-    LSL r1, r1, #29                   @ Desloca r1 (segundo argumento)
-    LSL r2, r2, #19                   @ Desloca r2 (terceiro argumento)
-    LSL r3, r3, #9                    @ Desloca r3 (quarto argumento)
-
-    ORR r1, r1, r2                    @ Combina r1 e r2
-    ORR r1, r1, r3                    @ Combina r1 e r3
-
-    LDR r4, [sp, #4]                  @ Carrega o quinto argumento da stack para r4
-
-    ORR r1, r1, r4                    @ Combina r1 com r4 (quinto argumento)
-	
-    STR r1, [r6, #0x70]              @ Armazena o valor combinado no dataB
-
-    MOV r0, #1                        @ Habilita instrução WRREG
-    STR r0, [r6, #0xc0]
-    MOV r0, #0                        @ Desabilita instrução WRREG
-    STR r0, [r6, #0xc0]
-
-    ADD sp, sp, #8                   @ Ajusta a stack
-    BX lr                            
-
-
-set_background_color:                @ Início da função set_background_color
-
-    PUSH {lr}                        @ Salva o link register (retorno da função) na pilha
-
-    LDR r6, =ADDRESS_MAPPED
-    LDR r6, [r6]
-
-    LDR r5, [r6, #0xb0]
-    CMP r5, #1              @Testa o bit 0 de r0 (bit de status do buffer)
-    BEQ wait_loop   
-    
-    MOV r3, #0                       @ Define r3 como o valor fixo do registrador para esta operação
-    LSL r3, r3, #4                   @ Desloca o valor do registrador (r3) 4 bits à esquerda
-    STR r3, [r6, #0x80]              @ Armazena o valor do registrador no dataA
-
-    LSL r0, r0, #6                   @ Desloca o valor do componente R 6 bits à esquerda
-    LSL r1, r1, #3                   @ Desloca o valor do componente G 3 bits à esquerda
-
-    ORR r0, r0, r1                   @ Combina R e G em um único valor
-    ORR r0, r0, r2                   @ Adiciona B ao valor combinado de R e G
-	
-    STR r0, [r6, #0x70]             @ Armazena o valor final RGB no dataB
-
-    MOV r0, #1                       @ Sinaliza para habilitar a instrução
-    STR r0, [r6, #0xc0]             @ Grava o sinal de habilitação no WRREG
-    MOV r0, #0                       @ Sinaliza para desabilitar a instrução
-    STR r0, [r6, #0xc0]             @ Grava o sinal de desabilitação no WRREG
-
-    ADD sp, sp, #4                   @ Ajusta a stack
-    BX lr
-
-set_background_block:
-  
-  PUSH {lr}
-
-  LDR r6, =ADDRESS_MAPPED
-  LDR r6, [r6]
-
-  LDR r5, [r6, #0xb0]
-  CMP r5, #1              @Testa o bit 0 de r0 (bit de status do buffer)
-  BEQ wait_loop   
-
-  LSL r0, r0, #4
-  MOV r5, #2
-  ORR r0, r0, r5
-  STR r0, [r6, #0x80]              @ Armazena o valor do registrador no dataA
-
-  LSL r2, r2, #3
-  LSL r3, r3, #6
-  ORR r1, r1, r2
-  ORR r1, r1, r3
-  STR r1, [r6, #0x70]             @ Armazena o valor final RGB no dataB
-
-
-  MOV r0, #1                       @ Sinaliza para habilitar a instrução
-  STR r0, [r6, #0xc0]             @ Grava o sinal de habilitação no WRREG
-  MOV r0, #0                       @ Sinaliza para desabilitar a instrução
-  STR r0, [r6, #0xc0]             @ Grava o sinal de desabilitação no WRREG
-
-  ADD sp, sp, #4                   @ Ajusta a stack
-  BX lr                            
-
-
-wait_loop:
-  LDR r6, =ADDRESS_MAPPED
-  LDR r6, [r6]
-  LDR r5, [r6, #0xb0]
-  CMP r5, #1              @Testa o bit 0 de r0 (bit de status do buffer)
-  BEQ wait_loop   
-  BX lr
-
 @\brief: le o valor dos botoes
 @\param[in]: null
 @\return: a soma do valor dos botoes pressionados
@@ -269,6 +163,13 @@ draw_triangle:
   str r3, [sp, #12]          @ Salva `posY`
   str r4, [sp, #8]           @ Salva `endereco`
 
+  @confere se o buffer de instrucao esta cheio
+  LDR r6, =ADDRESS_MAPPED
+  LDR r6, [r6]
+  LDR r5, [r6, #0xb0]
+  CMP r5, #1              @Testa o bit 0 de r0 (bit de status do buffer)
+  BL wait_loop   
+
   @ Zera o sinal de start
   mov r0, #0
   ldr r1, =ADDRESS_MAPPED
@@ -311,6 +212,12 @@ draw_triangle:
   ldr r1, [r1]
   str r0, [r1, #0xc0]        @ Atualiza WRREG para sinal positivo
   
+  @ Zera o sinal de start
+  mov r0, #0
+  ldr r1, =ADDRESS_MAPPED
+  ldr r1, [r1]
+  str r0, [r1, #0xc0]
+
   @ Restaura os valores dos registradores
   ldr r0, [sp, #24]          @ Restaura `cor`
   ldr r1, [sp, #20]          @ Restaura `tamanho`
@@ -339,6 +246,13 @@ draw_square:
   str r3, [sp, #4]          @ Salva `posY`
   str r4, [sp, #0]           @ Salva `endereco`
 
+  @confere se o buffer de instrucao esta cheio
+  LDR r6, =ADDRESS_MAPPED
+  LDR r6, [r6]
+  LDR r5, [r6, #0xb0]
+  CMP r5, #1              @Testa o bit 0 de r0 (bit de status do buffer)
+  BL wait_loop   
+
   @ Zera o sinal de start
   mov r0, #0
   ldr r1, =ADDRESS_MAPPED
@@ -380,6 +294,11 @@ draw_square:
   ldr r1, =ADDRESS_MAPPED
   ldr r1, [r1]
   str r0, [r1, #0xc0]        @ Atualiza WRREG para sinal positivo
+  @ Zera o sinal de start
+  mov r2, #0
+  ldr r1, =ADDRESS_MAPPED
+  ldr r1, [r1]
+  str r2, [r1, #0xc0]
   
   @ Restaura os valores dos registradores
   ldr r0, [sp, #24]          @ Restaura `cor`
@@ -400,6 +319,13 @@ wbm:
   sub sp, sp, #8
   str r0, [sp, #0]          @ Salva `cor`
   str r1, [sp, #4]          @ Salva `endereco`
+
+  @confere se o buffer de instrucao esta cheio
+  LDR r6, =ADDRESS_MAPPED
+  LDR r6, [r6]
+  LDR r5, [r6, #0xb0]
+  CMP r5, #1              @Testa o bit 0 de r0 (bit de status do buffer)
+  BL wait_loop   
 
   @ Zera o sinal de start
   mov r0, #0
@@ -428,44 +354,11 @@ wbm:
   ldr r1, =ADDRESS_MAPPED
   ldr r1, [r1]
   str r0, [r1, #0xc0]        @ Atualiza WRREG para sinal positivo
-  
-  @ Restaura os valores dos registradores
-  ldr r0, [sp, #0]          @ Restaura `cor`
-  ldr r1, [sp, #4]          @ Restaura `tamanho`
-  add sp, sp, #8            @ Libera o espaço da pilha
-
-  bx lr
-
-clear_background:
-  @ Salva os registradores na pilha
-  sub sp, sp, #8
-  str r0, [sp, #0]          @ Salva `cor`
-  str r1, [sp, #4]          @ Salva `endereco`
-
   @ Zera o sinal de start
-  mov r0, #0
+  mov r2, #0
   ldr r1, =ADDRESS_MAPPED
   ldr r1, [r1]
-  str r0, [r1, #0xc0]
-
-  @ Configuração de dataA
-  mov r0, #0b00000          @ opcode
-  lsl r0, r0, #4
-  ldr r2, =ADDRESS_MAPPED
-  ldr r2, [r2]
-  str r0, [r2, #0x80]        @ Armazena `dataA` no endereço mapeado
-
-  @ Configuração de dataB
-  mov r0, #0b000000000
-  ldr r1, =ADDRESS_MAPPED
-  ldr r1, [r1]
-  str r0, [r1, #0x70]        @ Armazena `dataB` no endereço mapeado
-
-  @ Sinal positivo para WRREG
-  mov r0, #1
-  ldr r1, =ADDRESS_MAPPED
-  ldr r1, [r1]
-  str r0, [r1, #0xc0]        @ Atualiza WRREG para sinal positivo
+  str r2, [r1, #0xc0]
   
   @ Restaura os valores dos registradores
   ldr r0, [sp, #0]          @ Restaura `cor`
@@ -489,6 +382,22 @@ hexs:
   str r4, [sp, #4]
   str r5, [sp, #0]
 
+  @confere se o buffer de instrucao esta cheio
+  LDR r6, =ADDRESS_MAPPED
+  LDR r6, [r6]
+  LDR r5, [r6, #0xb0]
+  CMP r5, #1              @Testa o bit 0 de r0 (bit de status do buffer)
+  BL wait_loop   
+
+  @mostradores
+  @HEX5_BASE: .word 0x10  @ Endereço do display HEX5 
+  @HEX4_BASE: .word 0x20  @ Endereço do display HEX4
+  @HEX3_BASE: .word 0x30  @ Endereço do display HEX3
+  @HEX2_BASE: .word 0x40  @ Endereço do display HEX2
+  @HEX1_BASE: .word 0x50  @ Endereço do display HEX1
+  @HEX0_BASE: .word 0x60  @ Endereço do display HEX0
+
+  @salvar os resgistradores na memoria
 
   ldr r6, =ADDRESS_MAPPED
   ldr r6, [r6]
@@ -499,7 +408,7 @@ hexs:
   strb r3, [r6, #0x40] @escrever no digito 2   
   strb r4, [r6, #0x50] @escrever no digito 1   
   strb r5, [r6, #0x60] @escrever no digito 0   
-  
+
   @carrega os registradores da memoria 
   ldr r0, [sp, #20]
   ldr r1, [sp, #16]
@@ -518,6 +427,13 @@ clear_dp_memory:
   @ Salva os registradores na pilha
   sub sp, sp, #4 
   str r0, [sp, #0]           @guarda r0 no topo da pilha
+
+  @confere se o buffer de instrucao esta cheio
+  LDR r6, =ADDRESS_MAPPED
+  LDR r6, [r6]
+  LDR r5, [r6, #0xb0]
+  CMP r5, #1              @Testa o bit 0 de r0 (bit de status do buffer)
+  BL wait_loop   
 
   @ Zera o sinal de start
   mov r2, #0
@@ -561,9 +477,207 @@ clear_dp_memory:
   ldr r1, [r1]
   str r0, [r1, #0xc0]        @ Atualiza WRREG para sinal positivo
   
+  @ Zera o sinal de start
+  mov r2, #0
+  ldr r1, =ADDRESS_MAPPED
+  ldr r1, [r1]
+  str r2, [r1, #0xc0]
+
   @ Restaura os valores dos registradores
   ldr r0, [sp, #0]
   add sp, sp, #4
 
   bx lr
 
+set_sprite:                           @ Início da função set_sprite
+    sub sp, sp, #32
+    str lr, [sp, #28]
+    str r6, [sp, #24]
+    str r5, [sp, #20]
+    str r4, [sp, #16]
+    str r3, [sp, #12]
+    str r2, [sp, #8]
+    str r1, [sp, #4]
+    str r0, [sp, #0]
+
+    LDR r6, =ADDRESS_MAPPED
+    LDR r6, [r6]
+    LDR r5, [r6, #0xb0]
+    CMP r5, #1              @Testa o bit 0 de r0 (bit de status do buffer)
+    BL wait_loop   
+  
+    LSL r0, r0, #4                    @ Desloca r0 (primeiro argumento)
+    STR r0, [r6, #0x80]              @ Armazena r0 deslocado no dataA
+
+    LSL r1, r1, #29                   @ Desloca r1 (segundo argumento)
+    LSL r2, r2, #19                   @ Desloca r2 (terceiro argumento)
+    LSL r3, r3, #9                    @ Desloca r3 (quarto argumento)
+
+    ORR r1, r1, r2                    @ Combina r1 e r2
+    ORR r1, r1, r3                    @ Combina r1 e r3
+
+    LDR r4, [sp, #32]                  @ Carrega o quinto argumento da stack para r4
+
+    ORR r1, r1, r4                    @ Combina r1 com r4 (quinto argumento)
+	
+    STR r1, [r6, #0x70]              @ Armazena o valor combinado no dataB
+
+    MOV r0, #1                        @ Habilita instrução WRREG
+    STR r0, [r6, #0xc0]
+    MOV r0, #0                        @ Desabilita instrução WRREG
+    STR r0, [r6, #0xc0]
+
+    ldr lr, [sp, #28]
+    ldr r6, [sp, #24]
+    ldr r5, [sp, #20]
+    ldr r4, [sp, #16]
+    ldr r3, [sp, #12]
+    ldr r2, [sp, #8]
+    ldr r1, [sp, #4]
+    ldr r0, [sp, #0]
+    add sp, sp, #28
+
+    @ADD sp, sp, #8                   @ Ajusta a stack
+    BX lr                            
+
+set_background_color:                @ Início da função set_background_color
+    sub sp, sp, #32
+    str lr, [sp, #28]
+    str r6, [sp, #24]
+    str r5, [sp, #20]
+    str r4, [sp, #16]
+    str r3, [sp, #12]
+    str r2, [sp, #8]
+    str r1, [sp, #4]
+    str r0, [sp, #0]
+
+    LDR r6, =ADDRESS_MAPPED
+    LDR r6, [r6]
+
+    BL wait_loop   
+    
+    MOV r3, #0                       @ Define r3 como o valor fixo do registrador para esta operação
+    LSL r3, r3, #4                   @ Desloca o valor do registrador (r3) 4 bits à esquerda
+    STR r3, [r6, #0x80]              @ Armazena o valor do registrador no dataA
+
+    LSL r0, r0, #6                   @ Desloca o valor do componente R 6 bits à esquerda
+    LSL r1, r1, #3                   @ Desloca o valor do componente G 3 bits à esquerda
+
+    ORR r0, r0, r1                   @ Combina R e G em um único valor
+    ORR r0, r0, r2                   @ Adiciona B ao valor combinado de R e G
+	
+    STR r0, [r6, #0x70]             @ Armazena o valor final RGB no dataB
+
+    MOV r0, #1                       @ Sinaliza para habilitar a instrução
+    STR r0, [r6, #0xc0]             @ Grava o sinal de habilitação no WRREG
+    MOV r0, #0                       @ Sinaliza para desabilitar a instrução
+    STR r0, [r6, #0xc0]             @ Grava o sinal de desabilitação no WRREG
+
+    ldr lr, [sp, #28]
+    ldr r6, [sp, #24]
+    ldr r5, [sp, #20]
+    ldr r4, [sp, #16]
+    ldr r3, [sp, #12]
+    ldr r2, [sp, #8]
+    ldr r1, [sp, #4]
+    ldr r0, [sp, #0]
+    add sp, sp, #32
+
+    BX lr
+
+set_background_block:
+  sub sp, sp, #32
+  str lr, [sp, #28]
+  str r6, [sp, #24]
+  str r5, [sp, #20]
+  str r4, [sp, #16]
+  str r3, [sp, #12]
+  str r2, [sp, #8]
+  str r1, [sp, #4]
+  str r0, [sp, #0]
+
+  LDR r6, =ADDRESS_MAPPED
+  LDR r6, [r6]
+
+  BL wait_loop   
+
+  LSL r0, r0, #4
+  MOV r5, #2
+  ORR r0, r0, r5
+  STR r0, [r6, #0x80]              @ Armazena o valor do registrador no dataA
+
+  LSL r2, r2, #3
+  LSL r3, r3, #6
+  ORR r1, r1, r2
+  ORR r1, r1, r3
+  STR r1, [r6, #0x70]             @ Armazena o valor final RGB no dataB
+
+
+  MOV r0, #1                       @ Sinaliza para habilitar a instrução
+  STR r0, [r6, #0xc0]             @ Grava o sinal de habilitação no WRREG
+  MOV r0, #0                       @ Sinaliza para desabilitar a instrução
+  STR r0, [r6, #0xc0]             @ Grava o sinal de desabilitação no WRREG
+
+  ldr lr, [sp, #28]
+  ldr r6, [sp, #24]
+  ldr r5, [sp, #20]
+  ldr r4, [sp, #16]
+  ldr r3, [sp, #12]
+  ldr r2, [sp, #8]
+  ldr r1, [sp, #4]
+  ldr r0, [sp, #0]
+  add sp, sp, #32
+
+  BX lr                            
+
+wait_loop:
+  LDR r6, =ADDRESS_MAPPED
+  LDR r6, [r6]
+  LDR r5, [r6, #0xb0]
+  CMP r5, #1              @Testa o bit 0 de r0 (bit de status do buffer)
+  BEQ wait_loop   
+  BX lr
+
+WSM:
+  sub sp, sp, #32
+  str lr, [sp, #28]
+  str r6, [sp, #24]
+  str r5, [sp, #20]
+  str r4, [sp, #16]
+  str r3, [sp, #12]
+  str r2, [sp, #8]
+  str r1, [sp, #4]
+  str r0, [sp, #0]
+
+  LDR r6, =ADDRESS_MAPPED
+  LDR r6, [r6]
+
+  BL wait_loop   
+
+  LSL r0, r0, #4
+  MOV r5, #1
+  ORR r0, r0, r5
+  STR r0, [r6, #0x80]              @ Armazena o valor do registrador no dataA
+
+  LSL r2, r2, #3
+  LSL r3, r3, #6
+  ORR r1, r1, r2
+  ORR r1, r1, r3
+  STR r1, [r6, #0x70]             @ Armazena o valor final RGB no dataB
+
+
+  MOV r0, #1                       @ Sinaliza para habilitar a instrução
+  STR r0, [r6, #0xc0]             @ Grava o sinal de habilitação no WRREG
+  MOV r0, #0                       @ Sinaliza para desabilitar a instrução
+  STR r0, [r6, #0xc0]             @ Grava o sinal de desabilitação no WRREG
+
+  ldr lr, [sp, #28]
+  ldr r6, [sp, #24]
+  ldr r5, [sp, #20]
+  ldr r4, [sp, #16]
+  ldr r3, [sp, #12]
+  ldr r2, [sp, #8]
+  ldr r1, [sp, #4]
+  ldr r0, [sp, #0]
+  add sp, sp, #32
+  BX lr            
