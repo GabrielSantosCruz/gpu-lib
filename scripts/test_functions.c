@@ -38,12 +38,21 @@ void clear_poligono(){
 }
 
 void desenha_poligonos(){
+<<<<<<< Updated upstream
   set_draw_triangle(0b000000111, 0b0001, 20, 20, 0);
   set_draw_square(video_BLUE, 1, 40, 40, 2);
 }
 // funcao para usar os mostradores
 void teste_mostradores(){
   hexs(9, 6, 71, 12, 127, 127);
+=======
+  set_draw_triangle(0b000000111, 0b0011, 100, 100, 0);
+  set_draw_square(0b111111000, 0b0011, 20, 20, 1);
+}
+// funcao para usar os mostradores
+void teste_mostradores(){
+  hexs(127, 6, 71, 12, 127, 127);
+>>>>>>> Stashed changes
 }
 // funcao mostrando os botoes funcionando
 
@@ -86,11 +95,47 @@ void clear_screen() {
 
 void main(){
   memory_map();
+<<<<<<< Updated upstream
   // mudar_sprite();
   // teste_mostradores();
   clear_screen();
   // draw_triangle(0b000000111, 0b0001, 20, 20, 0b0001);
   // desenha_poligonos();
   clear_poligono();
+=======
+  mudar_sprite();
+  while(1){
+    int key_value = key_read();
+    printf("key_value: %d\n", key_value);
+    switch (key_value) {
+
+      case -1: 
+        clear_poligono();
+        clear_screen();
+        break; 
+      case -2:
+        set_draw_triangle(0b000000111, 0b0011, 100, 100, 0b0001);
+        break; 
+      case -3:
+        break;
+      case -4:
+        set_background_block(480,100,100,225);
+        break; 
+      case -6:
+        set_sprite(1,1,100,100,0);
+        break; 
+      case -8:
+        set_sprite(3,1,200,200,25);	
+        break;
+      case -9:
+        set_background_color(100,0,0);
+        break;
+      case -10:
+        set_draw_square(0b111111000, 0b0011, 20, 20, 0b0011);
+        break;
+    }
+    mudar_sprite();
+  }
+>>>>>>> Stashed changes
   memory_unmap();
 }
