@@ -12,29 +12,37 @@ extern int key_read();
 extern void hexs(int digito0, int digito1, int digito2, int digito3, int digito4, int digito5);
 extern void draw_triangle(int cor, int tamanho, int posX, int posY, int endereco);
 extern void draw_square(int cor, int tamanho, int posX, int posY, int endereco);
-extern void clear_dp_from_vga();
 extern void wbm(int cor, int endereco);
+extern void clear_dp_memory();
+extern void clear_background();
+
+
+int board[3][3] = {
+  {1, 0, 1},
+  {0, 1, 0},
+  {0, 0, 1}
+};
+
+
+void print_board(int col, int row, int matriz[col][row]){
+  for(int i = 0; i < row; i++){
+    for(int j = 0; j < col; j++){
+      if(matriz[i][j] == 1){
+        wbm(0b0001111111, ((i * 80 + 80) + (j + 280)));
+      }
+    }
+  }
+}
+
 
 void main(){
   memory_map();
-
-  draw_triangle(video_PURPLE, 0b0001, 10, 10, 0);
-  
-  int key_value = 0;
-  
-  while(key_value != 8){
-
-    key_value = key_read();
-    printf("Valor do botão: %d\n", key_value);
-
-    if(key_value == 1){
-      draw_triangle(0b000111111, 0b0001, 30, 20, 1);
-    } else if (key_value == 2){
-      draw_square(0b000111111, 0b0001, 100, 200, )
-    } else if (key_value == 4) {
-      clear_dp_from_vga();
-    }
-  }
+  clear_background();
+  int posX = 50;
+  int posY = 20;
+  int posicao = ((posX * 80+80) + (posY+80));
+  wbm(0b000111111, posicao);
+  print_board(3, 3, board);
 
   memory_unmap();
 }
