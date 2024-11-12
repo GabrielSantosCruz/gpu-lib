@@ -87,7 +87,7 @@ Quando o buffer está pronto, configura-se o **dataA** com o endereço e **opcod
 
 Para enviar a instrução, ativa-se o sinal de escrita (**WRREG**) com **r0 = 1**, depois o desativa (**r0 = 0**). Finalmente, a função ajusta a pilha e retorna, garantindo que os dados do **sprite** sejam corretamente enviados à **GPU** para renderização.
 
-<img src="media/wsm.png" alt="WBR" width="500"/>
+<img src="media/wsm.png" alt="WSM" width="500"/>
 
 
 # Escrita na Memória de Background (WBM)
@@ -106,6 +106,20 @@ Por fim, **r0** é configurado como **1** para habilitar o **WRREG** (**sinal de
 
 # Definição de um Polı́gono (DP)
 
+Essa instrução configura e renderiza **polígonos** na tela, permitindo que objetos geométricos (quadrados ou triângulos) sejam definidos e exibidos. 
+
+Todos os registradores necessários são salvos na pilha para preservar o estado inicial.
+Logo depois, a função chama **wait_loop** para verificar o status do buffer de instrução e aguarda caso o buffer esteja cheio.
+
+Após garantir que o buffer esteja pronto, zera o sinal de **start**, prevenindo conflitos com instruções anteriores. O **opcode** `0b0011` para a operação **DP** é combinado com o endereço do **polígono**, que é deslocado **4 bits** à esquerda e armazenado no barramento **dataA** para a **GPU** processar.
+
+Na configuração do **dataB**, a função define o tipo de **polígono** (`0` para quadrado e `1` para triângulo), movendo o valor para o bit mais significativo. A **cor** é carregada e deslocada para a posição correta, combinada com o **tamanho**, **posY** e **posX** para formar o valor completo que representa o **polígono**. Esse valor final é então armazenado em **dataB**.
+
+Para executar a instrução, o sinal **WRREG** é ativado ao definir **r0** para `1` e enviado ao endereço mapeado. Depois, o sinal é zerado para liberar o buffer. Finalmente, todos os registradores são restaurados da pilha, e a função retorna, concluindo a configuração do **polígono** na tela da **GPU**.
+
+<img src="media/dp.png" alt="DP" width="500"/>
+
 # Conclusão
 
+A execução deste projeto exigiu a aplicação de conhecimentos fundamentais em interação hardware-software, arquitetura de computadores e sistemas digitais. A compreensão dos princípios básicos de assembly foi crucial para o avanço das etapas do projeto. Embora as instruções tenham sido codificadas com sucesso, a integração com o jogo proposto no Problema 1 não pôde ser realizada.
 
