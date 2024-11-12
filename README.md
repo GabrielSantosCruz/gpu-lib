@@ -68,9 +68,41 @@ Esse processo garante uma comunicação eficiente e sincronizada com os perifér
 
 # Escrita no Banco de Registradores (WBR) 
 
+Essa instrução é utilizada para configurar os registradores que armazenam informações fundamentais sobre os **sprites** e o **plano de fundo**, incluindo coordenadas, offsets de memória e cor de background. Para definir a cor do **background**, a estrutura da instrução **WBR** segue um formato específico, onde os valores **R**, **G** e **B** indicam as componentes da cor **RGB** do background. Nesse caso, o registrador associado à cor de fundo é previamente configurado de maneira interna.
+
+A estrutura de codificação da instrução define que o **opcode** para a operação **WBR** é configurado como `0000`. O campo **offset** é responsável por identificar a posição do **sprite** na memória, enquanto o campo **registrador** armazena as coordenadas de impressão (X e Y) e outros parâmetros gráficos. Para cada **sprite**, o **offset** atua como um ponteiro que define onde o dado do **sprite** está alocado, garantindo que o processamento gráfico acesse o elemento certo na memória da **GPU**. O sinal de habilitação do **sprite**, representado pelo bit **Sp**, permite controlar a ativação ou desativação do **sprite** na tela.
+
+<img src="media/wbr.png" alt="WBR" width="500"/>
+
+
 # Escrita na Memória de Sprites (WSM)
 
+Essa instruçção permite armazenar ou modificar dados de **sprites** na memória. Ela possibilita a criação de figuras gráficas complexas, como personagens e objetos de jogos, armazenando cada componente de cor (**R**, **G** e **B**) e a localização na memória para a renderização.
+
+Esse processo é estruturado para permitir o controle direto e eficiente sobre os **sprites**, utilizando-se dos barramentos **dataA** e **dataB**. O **dataA** carrega o **opcode** e o endereço do **sprite** na memória, enquanto o **dataB** carrega o valor final que define as cores **RGB**. Essa separação garante que a instrução possa ser processada pela **GPU** em duas partes, cada uma com sua função específica no sistema de renderização.
+
+Para a instrução **WSM**, primeiro salva o registrador de retorno (**lr**) e configura o acesso ao endereço base da **GPU** em **r6**. Ela verifica o status do buffer de instrução (**WRFULL**) para garantir que não esteja cheio, chamando uma função de espera se necessário.
+
+Quando o buffer está pronto, configura-se o **dataA** com o endereço e **opcode** do **sprite** ao deslocar **r0** e combinar com **r5**. Em seguida, os valores **RGB** são ajustados por deslocamento em **r2** e **r3** e combinados em **r1**, que é armazenado em **dataB**.
+
+Para enviar a instrução, ativa-se o sinal de escrita (**WRREG**) com **r0 = 1**, depois o desativa (**r0 = 0**). Finalmente, a função ajusta a pilha e retorna, garantindo que os dados do **sprite** sejam corretamente enviados à **GPU** para renderização.
+
+<img src="media/wsm.png" alt="WBR" width="500"/>
+
+
 # Escrita na Memória de Background (WBM)
+
+Essa instrução é usada para definir ou modificar o conteúdo do **background**, permitindo configurar cores e preenchimentos específicos na tela 
+
+Primeiro, os registradores **cor** e **endereco** são salvos na pilha para preservação dos valores originais.
+Em seguida, o código inicializa o sinal de **start**, movendo **0** para **r0** e armazenando-o no registrador **WRREG** para garantir que nenhuma instrução anterior esteja em execução.
+
+Para configurar o **dataA**, o **opcode** `0b0010` é movido para **r0**, e o endereço de memória **endereco** (carregado de **sp** para **r1**) é deslocado **4 bits** à esquerda e somado ao **opcode**. O valor resultante em **r1** é então armazenado em **dataA**, o barramento de endereço e comando da **GPU**.
+
+Na configuração do **dataB**, o valor da **cor** é carregado de **sp** em **r0** e armazenado diretamente no **dataB** para uso na operação de **background**.
+
+Por fim, **r0** é configurado como **1** para habilitar o **WRREG** (**sinal de escrita**), ativando a instrução na **GPU**. Os valores originais de **cor** e **endereco** são restaurados dos endereços da pilha, que é ajustada com `add sp, sp, #8` antes do retorno ao final da função.
+
 
 # Definição de um Polı́gono (DP)
 
